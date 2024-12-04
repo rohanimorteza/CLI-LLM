@@ -1,11 +1,13 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -13,15 +15,24 @@ import (
 // chatCmd represents the chat command
 var chatCmd = &cobra.Command{
 	Use:   "chat",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "LLM chatbot",
+	Long:  "LLM chatbot",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("chat called")
+		reader := bufio.NewReader(os.Stdin)
+		for {
+			fmt.Print(">  ")
+			input, _ := reader.ReadString('\n')
+			input = strings.TrimSpace(input)
+
+			switch input {
+			case "quit", "exit":
+				fmt.Println("Exiting...")
+				os.Exit(0)
+			default:
+				fmt.Println("You said : ", input)
+			}
+
+		}
 	},
 }
 
