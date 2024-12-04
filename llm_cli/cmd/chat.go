@@ -7,7 +7,9 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/spf13/cobra"
 )
@@ -19,6 +21,17 @@ var chatCmd = &cobra.Command{
 	Long:  "LLM chatbot",
 	Run: func(cmd *cobra.Command, args []string) {
 		reader := bufio.NewReader(os.Stdin)
+
+		//Set up a channel to listen for interrupt signals
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+		go func() {
+			<-sigChan
+			fmt.Println("\nInterrupt signal received. Exitting...")
+			os.Exit(0)
+		}()
+
 		for {
 			fmt.Print(">  ")
 			input, _ := reader.ReadString('\n')
