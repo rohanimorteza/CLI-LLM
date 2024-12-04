@@ -5,13 +5,17 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
+	"github.com/tmc/langchaingo/llms"
+	"github.com/tmc/langchaingo/llms/openai"
 )
 
 // chatCmd represents the chat command
@@ -32,6 +36,22 @@ var chatCmd = &cobra.Command{
 			os.Exit(0)
 		}()
 
+		llm, err := openai.New()
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+
+		ctx := context.Background()
+
+		// Initial LLM prompt phase
+		fmt.Print("Enter Initial prompt for LLM: ")
+		initialPrompt, _ := reader.ReadString('\n')
+		initialPrompt = strings.TrimSpace(initialPrompt)
+		content := []llms.MessageContent{
+			llms.TextParts(llms.ChatMessageTypeSystem, initialPrompt),
+		}
+		fmt.Println("initial prompt recieved. Entering chat mode ...")
+
 		for {
 			fmt.Print(">  ")
 			input, _ := reader.ReadString('\n')
@@ -42,7 +62,18 @@ var chatCmd = &cobra.Command{
 				fmt.Println("Exiting...")
 				os.Exit(0)
 			default:
-				fmt.Println("You said : ", input)
+				// Process user input with the LLM here
+				response := ""
+				content = append(content, llms.TextParts(llms.ChatMessageTypeHuman, input))
+				llm.GenerateContent(ctx, content,
+					llms.WithMaxTokens(1024),
+					llms.WithStreamingFunc(func(ctx context.Context, chunk []byte) error {
+						fmt.Print(string(chunk))
+						response = response + string(chunk)
+						return nil
+					}),
+				)
+				content = append(content, llms.TextParts(llms.ChatMessageTypeSystem, response))
 			}
 
 		}
